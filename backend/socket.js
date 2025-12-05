@@ -190,46 +190,28 @@ function socketHandler(io) {
                 // socket.emit('message_status_update', { chatId : cId, msgId : msg.content[lastIndex]._id, status : 'seen' })  
             }
             // else{
-                console.log("myId", myId)
-                const user = await user_module.findById(myId);
-                const fcmToken = await fcmTokenModel.find({ userId: cnvstId }); 
-                if(!fcmToken.length){    
-                    console.log("No FCM token found for user:", cnvstId);
-                    return;
-                }   
-                console.log("fcmToken-", fcmToken[0])
-                
-                const resp = await sentToToken(fcmToken[0].userId, fcmToken[0].token, user.name, text, { chatId: cId, senderId: myId });
+            console.log("myId", myId)
+            const user = await user_module.findById(myId);
+            const fcmToken = await fcmTokenModel.find({ userId: cnvstId });
+            if (!fcmToken.length) {
+                console.log("No FCM token found for user:", cnvstId);
+                return;
+            }
+            console.log("fcmToken-", fcmToken[0])
+
+            const resp = await sentToToken(fcmToken[0].userId, fcmToken[0].token, user.name, text, { chatId: cId, senderId: myId });
 
 
-                if(!resp.success){
-                    // console.error('Failed to send FCM notification', resp);  
-                    if(resp?.err?.code==='registration-token-not-registered'){
-                        fcmTokenModel.deleteOne({userId: cnvstId, token: fcmToken[0].token});
-                    }
+            if (!resp.success) {
+                // console.error('Failed to send FCM notification', resp);  
+                if (resp?.err?.code === 'registration-token-not-registered') {
+                    fcmTokenModel.deleteOne({ userId: cnvstId, token: fcmToken[0].token });
                 }
+            }
 
             // }
         })
 
-        // socket.on('message_read', async (userId, chatId) => {// will be triggered from frontend, handled at self
-        //     const message = await msg_module.find({
-        //         userId: { $ne: useraId }, // only find those which didn't send by self
-        //         chatId: chatId,
-        //     })
-        //     let ctntArr = message.map(msg => {
-        //         if (msg.status == 'sent') {
-        //             msg.status == 'read'
-        //         }
-        //         return msg;
-        //     })
-
-        //     message.content = ctntArr;
-        //     message.save();
-
-        //     socket.emit('message_status_update', { message }) // to sender -  display updated content
-
-        // })
         socket.on('message_seen', async ({ chatId, userId }) => {
             console.log("message_seen-", chatId, userId)
             const msg = await msg_module.find({ chatId: chatId })
@@ -248,7 +230,42 @@ function socketHandler(io) {
 
         });
 
+
+        // CALLING SERVER LOGIC
+
+        socket.on('offer', ({ toUserId, sdp }) => {
+
+            const recipientSocketId = onlineUsers.get(toUserId);
+            if (recipientSocketId) {
+                io.to(recipientSocketId).emit('offer', { fromzUserId: userId, sdp });
+                socket.emit('ringing', {});
+            }
+        });
+
+        socket.on('answer', ({toUserId, sdp})=>{
+            const recipientSocketId = onlineUsers.get(toUserId);
+            if (recipientSocketId) {
+                io.to(recipientSocketId).emit('answer', { sdp });
+            }
+        })
+
+        socket.on('end-call', ({toUserId})=>{
+            const recipientSocketId = onlineUsers.get(toUserId);
+            if (recipientSocketId) {
+                io.to(recipientSocketId).emit('end-call', {});
+            }
+        })
+
+        socket.on('rejected',({toUserId})=>{
+            const recipientSocketId = onlineUsers.get(toUserId);
+            if (recipientSocketId) {
+                io.to(recipientSocketId).emit('rejected', {});
+            }
+        })
+
     });
+
+
 }
 
 export default socketHandler

@@ -6,11 +6,19 @@ import instance from '../utils/Instance.js';
 import { FaUserPlus } from "react-icons/fa";
 // import {enabled, setEnabled, playrecieve, playsend} from '../utils/soundEffect.js'
 import soundObject from '../utils/soundEffect.js'
-import { MdOutlineNotificationsActive, MdOutlineNotificationsOff  } from "react-icons/md";
+import { MdOutlineNotificationsActive, MdOutlineNotificationsOff } from "react-icons/md";
 import { RiCloseCircleFill } from "react-icons/ri";
 
-// import img from ''
+//Calling imports
 
+import { MdCall } from "react-icons/md";
+import { CurrentCall } from './CurrentCall.jsx';
+import { IncomingCallScreen } from './IncomingCallScreen.jsx';
+import { VideoCallTile } from './vedioCallTile.jsx';
+
+import useWebRTC from '../hooks/useWebRTC.js'
+
+// import img from ''
 
 // -------------------- Chat UI --------------------
 function Avatar({ name }) {
@@ -22,12 +30,13 @@ function Avatar({ name }) {
   );
 }
 
-function ChatItem({ chat, onClick }) {
+function ChatItem({ chat, onClick, currentChatId, callUser, userId }) {
+  // console.log("currentChatId-", currentChatId, " chatid-", chat._id)
   return (
     <div
       onClick={onClick}
-      className="flex items-center gap-4 p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer" 
-      title="open chat" 
+      className={`flex items-center gap-4 p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer ${currentChatId === chat._id ? 'bg-gray-200' : ''}`}
+      title="open chat"
     >
       <Avatar name={chat.conversate.name} />
       <div className="flex-1">
@@ -48,6 +57,7 @@ function ChatItem({ chat, onClick }) {
               </span>
             </div>
           )}
+          <MdCall onClick={()=>callUser(userId)}/>
         </div>
         {/* <div className="text-sm text-gray-500">New messages</div> */}
       </div>
@@ -120,13 +130,11 @@ function Chats() {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
 
-  // #region Sound Effect
+  //  Sound Effect
   const { playrecieve, playsend, enabled, setEnabled } = soundObject();
   // console.log("Sound Object in Chats", play)
 
   useEffect(() => {
-
-
     // #region message recieve
     const handleMessageRecieved = ({ chatId, message }) => {
       console.log("message_received", chatId, message)
@@ -234,7 +242,6 @@ function Chats() {
     }
   }
 
-
   // --- Handler functions (left empty for now as requested) ---
   function handleSelectChat(chat, cnvstId) {
     // TODO: implement selecting a chat (setSelected_id)
@@ -250,7 +257,6 @@ function Chats() {
     setCnvstId(cnvstId);
     setChatList(prev => prev?.map(c => c._id == chat._id ? { ...c, newMsgs: 0 } : c));
   }
-
 
   // #region message send
   function handleSendMessage() {
@@ -292,7 +298,6 @@ function Chats() {
     // getChats()
 
   }
-
 
   function handleInputChange(e) {
     // TODO: implement input change (setInputValue)
@@ -378,7 +383,7 @@ function Chats() {
     const s = connectSocket();
     s.on('connect', () => {
       // console.log('connected', s)
-      console.log("Socket connected  - ",getUserData().name, "logged in!")
+      console.log("Socket connected  - ", getUserData().name, "logged in!")
     });
     // console.log("initail load")
     getChats()
@@ -398,6 +403,21 @@ function Chats() {
 
   // --- Derived data ---
 
+  const {  localStreamRef,
+  remoteStreamRef,
+  callUser,
+  endCall,
+  incoming,
+  inCall,
+  callStatus,
+  // localStream,
+  // remoteStream,
+  muted,
+  videoEnabled,
+  setMuted,
+  setAccepted,
+  setVideoEnabled } = useWebRTC();
+
   return (
     <div className=" bg-gray-200 p-4">
       <div className="mx-auto bg-white rounded-2xl shadow-xl overflow-hidden  w-full" style={{ height: 581 }}>
@@ -411,7 +431,7 @@ function Chats() {
             </div> */}
               <div className="flex items-center gap-3">
                 <button onClick={() => setEnabled(!enabled)} title="message sound status">
-                  {enabled ? <MdOutlineNotificationsActive size={22} /> : <MdOutlineNotificationsOff size={22}/>}
+                  {enabled ? <MdOutlineNotificationsActive size={22} /> : <MdOutlineNotificationsOff size={22} />}
                 </button>
                 <button
                   onClick={() => setShowNewChatPanel(true)}
@@ -431,6 +451,9 @@ function Chats() {
                   key={key}
                   chat={chat}
                   onClick={() => handleSelectChat(chat, chat.conversate.id)}
+                  currentChatId={selectedChat?._id}
+                  callUser={callUser}
+                  userId={userData.id}
                 />
               ))) : <div className='w-full flex items-center align-center' > You have no chat, find people to start conversation</div>}
             </div>
