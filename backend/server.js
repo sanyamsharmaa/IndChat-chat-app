@@ -13,13 +13,21 @@ import routes from './routes/routes.js';
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost:5173',  credentials: true, }));
+app.use(cors({
+  origin: 'http://localhost:5173',
+  // origin: 'https://rosanna-veinier-irrefutably.ngrok-free.dev',
+  credentials: true,
+}));
 app.use(express.json());
-app.use(urlencoded({extended: true }));
+app.use(urlencoded({ extended: true }));
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "http://localhost:5173", credentials: true },
+  cors: { 
+    origin: "", 
+    // origin: 'https://rosanna-veinier-irrefutably.ngrok-free.dev',
+    credentials: true
+  },
 });
 
 
@@ -41,9 +49,9 @@ app.post('/login', async (req, res) => {
         sameSite: 'lax',              // or 'none' if cross-site (with secure:true)
         maxAge: 1000 * 60 * 60 * 24    // 1 day (optional)
       });
-      return res.status(200).json({success: true,  msg: "login successfully" });
+      return res.status(200).json({ success: true, msg: "login successfully" });
     }
-     res.status(500).json({ msg: "no user found for given mail" });
+    res.status(500).json({ msg: "no user found for given mail" });
   }
   catch (err) {
     console.log("login error-", err)
@@ -53,7 +61,7 @@ app.post('/login', async (req, res) => {
 
 socketHandler(io);
 // app.get("/", () => console.log("/path"))
-app.use('/',routes)
+app.use('/', routes)
 
 // app.listen(8000,()=>{
 //     console.log("server is running on 8000 port")

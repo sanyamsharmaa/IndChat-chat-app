@@ -189,7 +189,7 @@ function socketHandler(io) {
                 // await msg.save();
                 // socket.emit('message_status_update', { chatId : cId, msgId : msg.content[lastIndex]._id, status : 'seen' })  
             }
-            // else{
+            else{
             console.log("myId", myId)
             const user = await user_module.findById(myId);
             const fcmToken = await fcmTokenModel.find({ userId: cnvstId });
@@ -209,7 +209,7 @@ function socketHandler(io) {
                 }
             }
 
-            // }
+            }
         })
 
         socket.on('message_seen', async ({ chatId, userId }) => {
@@ -230,14 +230,21 @@ function socketHandler(io) {
 
         });
 
-
         // CALLING SERVER LOGIC
 
-        socket.on('offer', ({ toUserId, sdp }) => {
+        socket.on('ice-candidate', ({ to, candidate }) => {
+            const recipientSocketId = onlineUsers.get(to);
+            if (recipientSocketId) {
+                io.to(recipientSocketId).emit('ice-candidate', {candidate });
+            }
+        });
+
+        socket.on('offer', ({CallerName, toUserId, sdp }) => {
 
             const recipientSocketId = onlineUsers.get(toUserId);
             if (recipientSocketId) {
-                io.to(recipientSocketId).emit('offer', { fromzUserId: userId, sdp });
+                console.log("Offering call to-", toUserId, "from user-", userId)
+                io.to(recipientSocketId).emit('offer', {name:CallerName, fromzUserId: userId,  sdp });
                 socket.emit('ringing', {});
             }
         });

@@ -1,6 +1,6 @@
 // src/firebase.js
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, isSupported  } from 'firebase/messaging';
 
 // console.log("firebase env vars", import.meta.env.VITE_FIREBASE_API_KEY)
 // console.log("projectId", import.meta.env.VITE_FIREBASE_PROJECT_ID)
@@ -24,6 +24,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 // console.log("Initialized firebase app", app)
 const messaging = getMessaging(app);
+// let messaging = null;
+
+// (async () => {
+//   if (await isSupported()) {
+//     messaging = getMessaging(app);
+//     // set up onMessage, getToken, etc.
+//   } else {
+//     console.warn("Firebase messaging is not supported in this browser/context");
+//   }
+// })();
 
 // async function printToken() {
 //   await navigator.serviceWorker.register('/firebase-messaging-sw.js');

@@ -64,10 +64,10 @@ async function initFCM() {
       console.log('FCM token:', currentToken);
       // const userId = "691c3a51667a398e5b55eeec"  // ww
       // const userId = "691c3a7b667a398e5b55eeed"  // jesse
-      const userId ="69284e6d297d820fa33eeece" //hank
-      console.log("userId", userId)
+      // const userId ="69284e6d297d820fa33eeece" //hank
+      // console.log("userId", userId)
       // Send token to your Express backend to save in MongoDB:getUserData().id
-      await instance.post('/store-fcm-token', { userId , token: currentToken, platform: 'web' })
+      // await instance.post('/store-fcm-token', { userId , token: currentToken, platform: 'web' })
     }
      else {
       console.log('No registration token available. Request permission to generate one.');

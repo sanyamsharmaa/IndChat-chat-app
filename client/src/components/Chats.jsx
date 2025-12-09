@@ -30,8 +30,10 @@ function Avatar({ name }) {
   );
 }
 
-function ChatItem({ chat, onClick, currentChatId, callUser, userId }) {
+function ChatItem({ chat, onClick, currentChatId, callUser, clrName, setCallerName }) {
   // console.log("currentChatId-", currentChatId, " chatid-", chat._id)
+  console.log("chat-", chat.conversate.id)
+  // console.log("touserid-", toUserId)
   return (
     <div
       onClick={onClick}
@@ -57,7 +59,10 @@ function ChatItem({ chat, onClick, currentChatId, callUser, userId }) {
               </span>
             </div>
           )}
-          <MdCall onClick={()=>callUser(userId)}/>
+          <MdCall title='call' onClick={() => {
+            setCallerName(chat.conversate.name);
+            return callUser(chat.conversate.id,chat.conversate.name, clrName)
+          }} />
         </div>
         {/* <div className="text-sm text-gray-500">New messages</div> */}
       </div>
@@ -245,7 +250,7 @@ function Chats() {
   // --- Handler functions (left empty for now as requested) ---
   function handleSelectChat(chat, cnvstId) {
     // TODO: implement selecting a chat (setSelected_id)
-    // console.log("ChatSelected-", chat._id)
+    console.log("ChatSelected-", chat._id)
     socket?.emit("open_chat", ({ aId: userData.id, bId: cnvstId }))
     const chatobj = {
       _id: chat._id,
@@ -293,7 +298,7 @@ function Chats() {
     socket?.emit('send_message', { myId, cnvstId, cId, text })
     // console.log("palying send sound")
     playsend();
-    // play("send")
+    // playrecieve();
     setText("");
     // getChats()
 
@@ -403,20 +408,33 @@ function Chats() {
 
   // --- Derived data ---
 
-  const {  localStreamRef,
-  remoteStreamRef,
-  callUser,
-  endCall,
-  incoming,
-  inCall,
-  callStatus,
-  // localStream,
-  // remoteStream,
-  muted,
-  videoEnabled,
-  setMuted,
-  setAccepted,
-  setVideoEnabled } = useWebRTC();
+  // #region WebRTC states
+  const {
+    localStreamRef,
+    remoteStreamRef,
+    callUser,
+    endCall,
+    calleeResponse,
+    incoming,
+    inCall,
+    localStream,
+    remoteStream,
+    muted,
+    videoEnabled,
+    setMuted,
+    // setAccepted,
+    callStatus,
+    setVideoEnabled,
+    callerName,
+    setCallerName
+  } = useWebRTC();
+
+
+  
+// console.log('local video tracks:', localStream?.getVideoTracks());
+// console.log('remote video tracks:', remoteStream?.getVideoTracks());
+// console.log('local readyStates:', localStream?.getVideoTracks().map(t => t.readyState));
+// console.log('remote readyStates:', remoteStream?.getVideoTracks().map(t => t.readyState));
 
   return (
     <div className=" bg-gray-200 p-4">
@@ -453,7 +471,9 @@ function Chats() {
                   onClick={() => handleSelectChat(chat, chat.conversate.id)}
                   currentChatId={selectedChat?._id}
                   callUser={callUser}
-                  userId={userData.id}
+                  clrName={userData.name}
+                  setCallerName={setCallerName}
+
                 />
               ))) : <div className='w-full flex items-center align-center' > You have no chat, find people to start conversation</div>}
             </div>
@@ -586,6 +606,32 @@ function Chats() {
           </div>
         </div>
       )}
+
+
+      {/* INCOMING CALL SCREEN */}
+      {incoming && (
+        <IncomingCallScreen
+          callerName={callerName}
+          calleeResponse={calleeResponse}
+          ringtoneEnabled={true}
+        />
+      )}
+      {/* CURRENT CALL SCREEN */}
+      {inCall  && (
+        <CurrentCall
+          localStream={localStream}
+          remoteStream={remoteStream}
+          callStatus={callStatus}
+          onToggleMute={() => setMuted(!muted)}
+          muted={muted}
+          onToggleVideo={setVideoEnabled}
+          videoEnabled={videoEnabled}
+          onSwitchCamera={() => { }}
+          endCall={endCall}
+          callerName={callerName || selectedChat?.conversate.name}
+        />
+      )}
+
 
     </div>
   );
